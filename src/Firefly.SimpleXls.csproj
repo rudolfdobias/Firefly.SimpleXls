@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyTitle>Firefly.SimpleXls</AssemblyTitle>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <Authors>Rudolf Dobias</Authors>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <DebugType>portable</DebugType>
+    <AssemblyName>Firefly.SimpleXls</AssemblyName>
+    <PackageId>Firefly.SimpleXls</PackageId>
+    <PackageTags>XLS Excel import export</PackageTags>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageVersion>1.0.0-alpha</PackageVersion>
+    <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <DocumentationFile />
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="EPPlus.Core" Version="1.5.2" />
+  </ItemGroup>
+</Project>

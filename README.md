@@ -1,6 +1,6 @@
 # Firefly.SimpleXLS
 
-[![NuGet](https://img.shields.io/nuget/v/Firefly.DependencyInjection.svg)](https://www.nuget.org/packages/Firefly.DependencyInjection)
+[![NuGet](https://img.shields.io/nuget/v/Firefly.SimpleXls.svg)](https://www.nuget.org/packages/Firefly.SimpleXls)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 > Simple Excel / .XLSX export and import for .NET Core applications in no time.

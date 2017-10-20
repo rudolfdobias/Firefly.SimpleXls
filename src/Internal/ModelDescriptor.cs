@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Firefly.SimpleXls.Attributes;
 using Firefly.SimpleXls.Converters;
+using Firefly.SimpleXls.Exceptions;
 
 namespace Firefly.SimpleXls.Internal
 {
@@ -83,6 +84,15 @@ namespace Firefly.SimpleXls.Internal
                         continue;
                     case XlsHeaderAttribute _:
                         info.Heading = (a as XlsHeaderAttribute)?.Name;
+                        break;
+                    case XlsTranslateAttribute _:
+                        if (typeof(string).IsAssignableFrom(member.PropertyType) == false)
+                        {
+                            throw new SimpleXlsException("Property " + member.Name +
+                                                         " cannot be translated since it's not convertilbe to string.");
+                        }
+                        info.TranslateValue = true;
+                        info.DictionaryPrefix = (a as XlsTranslateAttribute)?.DictPrefix;
                         break;
                 }
             }

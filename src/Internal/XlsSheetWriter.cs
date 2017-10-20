@@ -35,7 +35,7 @@ namespace Firefly.SimpleXls.Internal
             worksheet.OutLineApplyStyle = true;
 
             var descriptors = ModelDescriptor.DescribeModel<T>();
-            CreateWorksheetHeader(worksheet, descriptors);
+            CreateWorksheetHeader(worksheet, descriptors, settings);
 
             var columnUsages = new int[descriptors.Count + 1];
             columnUsages.Initialize();
@@ -69,6 +69,11 @@ namespace Firefly.SimpleXls.Internal
                         columnUsages[col]++;
                     }
 
+                    if (d.Attributes.TranslateValue)
+                    {
+                        value = TranslateValue(value, d, settings);
+                    }
+
                     worksheet.Cells[row, col].Value = value;
                     col++;
                 }
@@ -82,6 +87,34 @@ namespace Firefly.SimpleXls.Internal
             }
 
             excel.Save();
+        }
+
+        /// <summary>
+        /// Translates value by localizer
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="descriptor"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        /// <exception cref="SimpleXlsException"></exception>
+        private static object TranslateValue(object value, ColumnDescriptor descriptor, SheetExportSettings settings)
+        {
+            if (settings.HasLocalizer == false)
+            {
+                throw new SimpleXlsException("Property " + descriptor.Key +
+                                             " has XlsTranslateAttribute but no Localizer was defined in export settings.");
+            }
+            if (value == null)
+            {
+                return null;
+            }
+            var str = (string) value;
+            if (string.IsNullOrEmpty(str))
+            {
+                return value;
+            }
+
+            return settings.GetLocalizer()[str];
         }
 
         /// <summary>
@@ -106,8 +139,9 @@ namespace Firefly.SimpleXls.Internal
         /// </summary>
         /// <param name="worksheet"></param>
         /// <param name="descriptors"></param>
+        /// <param name="settings"></param>
         private static void CreateWorksheetHeader(ExcelWorksheet worksheet,
-            Dictionary<string, ColumnDescriptor> descriptors)
+            Dictionary<string, ColumnDescriptor> descriptors, SheetExportSettings settings)
         {
             var cntr = 1;
             foreach (var d in descriptors.Values)
@@ -116,7 +150,12 @@ namespace Firefly.SimpleXls.Internal
                 {
                     continue;
                 }
-                worksheet.Cells[1, cntr].Value = d.Attributes.Heading;
+                var value = d.Attributes.Heading;
+                if (settings.TranslateColumnHeaders && settings.HasLocalizer)
+                {
+                    value = settings.GetLocalizer()[d.Attributes.Heading];
+                }
+                worksheet.Cells[1, cntr].Value = value;
                 cntr++;
             }
         }

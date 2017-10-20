@@ -6,6 +6,5 @@ namespace Firefly.SimpleXls.Attributes
     public class XlsHeaderAttribute : Attribute
     {
         public string Name { get; set; }
-        public bool Translate { get; set; }
     }
 }

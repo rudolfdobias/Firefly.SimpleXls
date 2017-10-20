@@ -9,7 +9,7 @@
     <PackageId>Firefly.SimpleXls</PackageId>
     <PackageTags>XLS Excel import export</PackageTags>
     <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <PackageVersion>1.0.0-alpha</PackageVersion>
+    <PackageVersion>1.0.0-alpha2</PackageVersion>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -18,5 +18,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="EPPlus.Core" Version="1.5.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Localization" Version="1.1.1" />
   </ItemGroup>
 </Project>

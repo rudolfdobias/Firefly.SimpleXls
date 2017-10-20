@@ -24,6 +24,7 @@ public void SaveXls(List<Orders> orders)
  * Allows creating custom data converters
  * Output to file / stream
  * Value localization
+ * Headers and values translation
  * Cached type reflection
  * Experimental XLS import feature
  
@@ -49,6 +50,63 @@ PM> Install-Package Firefly.SimpleXLS
 ---
 
 ## Documentation
+
+
+### The export
+
+There are 3 possible targets for exporting:
+
+ ```cs
+
+public void SaveXls(List<XlsOrderViewModel> orders)
+{
+    Exporter.CreateNew()
+        .AddSheet(orders)
+        .Export("eshop_orders.xlsx");
+
+...
+
+    var file = new FileInfo("path/to/eshop_orders.xlsx");
+    Exporter.CreateNew()
+        .AddSheet(orders)
+        .Export(file);
+...
+
+    using (var stream = new MemoryStream())
+    {
+        Exporter.CreateNew()
+        .AddSheet(orders)
+        .Export(stream);
+
+        // do something with the stream
+    }
+}
+
+```
+
+
+#### Export settings
+
+Use a `SheetExportSettings` action for more detailed configuration.
+
+```cs
+
+public void SaveXls(List<XlsOrderViewModel> orders)
+{
+    Exporter.CreateNew()
+        .AddSheet(orders, 
+        settings => {
+            settings.OmitEmptyColumns = true,                   // Default true; Colums with no values will be omitted
+            settings.SheetName = "My customized sheet name",    // Default model name; Human-friendly name of the sheet
+            settings.UseCulture = new CultureInfo("hu-HU"),     // Default CurrentCulture; Spefific culture for converters and localization.
+            settings.Localizer = MyStringLocalizer,             // Default null; Provide an ILocalizer if you want to translate sheet data
+            settings.TranslateHeaders = true                    // Default true; Translates headers with Localizer, if present
+            }
+        )
+        .Export("eshop_orders.xlsx");
+}
+
+```
 
 ### The model
 
@@ -87,6 +145,13 @@ Supported complex types:
  - _Some other objects that can be natively represented by .ToString(), like Guid, Point, etc..._ 
 
 
+#### Note about value Localization
+
+> Only `DateTime` and `TimeSpan` values are localized to the specified Culture. If you want to auto-localize other types, you may implement own `IValueConverter`.
+
+Localizing other types like _int : 1000.123 => 1,000.123_ is not recommended since Excel handles these datatypes by its own.
+
+
 #### Model attributes
 
 ```cs
@@ -98,6 +163,10 @@ public class XlsOrderViewModel
 
     public string ArticleName { get; set; }
     public decimal Price { get; set; }
+
+    [XlsTranslate(DictPrefix = "eshop.categories.")]    // Will be translated by your localizer (if provided)
+    public string CategoryName { get; set; }
+
     public DateTime CreateAt { get; set; }
 
     [XlsIgnore]                              // This column will not be exported 
@@ -105,60 +174,6 @@ public class XlsOrderViewModel
 }
 
 ```
-
-
-### The export
-
-There are 3 ways where you can export the data to:
-
- ```cs
-
-public void SaveXls(List<XlsOrderViewModel> orders)
-{
-    Exporter.CreateNew()
-        .AddSheet(orders)
-        .Export("eshop_orders.xlsx");
-
-...
-
-    var file = new FileInfo("path/to/eshop_orders.xlsx");
-    Exporter.CreateNew()
-        .AddSheet(orders)
-        .Export(file);
-...
-
-    using (var stream = new MemoryStream())
-    {
-        Exporter.CreateNew()
-        .AddSheet(orders)
-        .Export(stream);
-
-        // do something with the stream
-    }
-}
-
-```
-
-
-#### Export settings
-
-```cs
-
-public void SaveXls(List<XlsOrderViewModel> orders)
-{
-    Exporter.CreateNew()
-        .AddSheet("Orders from Eshop", orders, 
-        settings => {
-            settings.OmitEmptyColumns = true, // Colums with no values will be omitted
-            settings.UseCulture = new CultureInfo("hu-HU"), // Spefific culture for converters. Will be explained below.
-            settings.SheetName = "My customized sheet name" // Human-friendly name of the sheet
-            }
-        )
-        .Export("eshop_orders.xlsx");
-}
-
-```
-
 
 ### Custom type mapping
 

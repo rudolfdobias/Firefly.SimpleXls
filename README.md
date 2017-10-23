@@ -1,14 +1,14 @@
-# Firefly.SimpleXLS
+# XLS Exporting for .NET Core
+> A Firefly.Net package
 
 [![NuGet](https://img.shields.io/nuget/v/Firefly.SimpleXls.svg)](https://www.nuget.org/packages/Firefly.SimpleXls)
+[![NuGet](https://img.shields.io/nuget/dt/Firefly.SimpleXls.svg)](https://www.nuget.org/packages/Firefly.SimpleXls)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
-
-> Simple Excel / .XLSX export and import for .NET Core applications in no time.
 
 ```cs
 using Firefly.SimpleXls;
 
-public void SaveXls(List<Orders> orders)
+public void ExportToXLS(List<Orders> orders)
 {
     Exporter.CreateNew()
         .AddSheet(orders)
@@ -25,12 +25,13 @@ public void SaveXls(List<Orders> orders)
  * Localization & Translation
  * Cached type reflection
  * Experimental XLS import feature
+ * Works on **.NET Core 1.1 or higher**
 
 
 ## Table of contents
 <!-- TOC -->
 
-- [Firefly.SimpleXLS](#fireflysimplexls)
+- [XLS Exporting for .NET Core](#xls-exporting-for-net-core)
     - [Features](#features)
     - [Table of contents](#table-of-contents)
     - [Installation](#installation)
@@ -45,9 +46,6 @@ public void SaveXls(List<Orders> orders)
             - [Note about data type Localization](#note-about-data-type-localization)
         - [Translation](#translation)
     - [Custom type mapping](#custom-type-mapping)
-            - [Let's have a custom model:](#lets-have-a-custom-model)
-            - [1: Create a converter:](#1-create-a-converter)
-            - [Register your converter once](#register-your-converter-once)
     - [The import](#the-import)
 
 <!-- /TOC -->
@@ -206,7 +204,6 @@ public void CreateExport(List<Order> orders, IStringLocalizer<MyDictionary> myLo
     Exporter.CreateNew()
         .AddSheet(orders, 
         settings => {
-            settings.Localizer = myLocalizer,                  // Default null; Provide an ILocalizer if you want to translate sheet data
             settings.UseCulture = new CultureInfo("cs-CZ")     // Default CurrentCulture; Spefific culture for converters and localization.
             }
         )
@@ -221,6 +218,19 @@ public void CreateExport(List<Order> orders, IStringLocalizer<MyDictionary> myLo
  - Table cells are **not** translated even if Localizer is present. Use `XlsTranslate` attribute on the column instead.
  - Automatic translation can be turned off setting `settings.Translate` to `FALSE`.
 
+```cs
+public void CreateExport(List<Order> orders, IStringLocalizer<MyDictionary> myLocalizer)
+{
+    Exporter.CreateNew()
+        .AddSheet(orders, 
+        settings => {
+            settings.Localizer = myLocalizer,                  // Default null; Provide an ILocalizer if you want to translate sheet data
+            settings.UseCulture = new CultureInfo("cs-CZ")     // Default CurrentCulture;
+            }
+        )
+        .Export("eshop_orders.xlsx");
+}
+```
 ```cs
 
 [XlsSheet(Name = "OrderSheetName", DictionaryPrefix="my.dictionary.section.")]
@@ -253,7 +263,7 @@ public class XlsOrderViewModel
 
 You can add any custom or existing type converter with global scope.
 
-#### Let's have a custom model:
+**1. Let's have a custom model:**
 
 ```cs
 public class Driver 
@@ -264,7 +274,7 @@ public class Driver
 ```
 
 
-#### 1: Create a converter:
+**2. Create a converter:**
 
 ```cs
 public class DriverValueConverter : IValueConverter
@@ -297,7 +307,7 @@ public class DriverValueConverter : IValueConverter
 }
 ```
 
-#### Register your converter once
+**3. Register your converter once:**
 
 
 ```cs

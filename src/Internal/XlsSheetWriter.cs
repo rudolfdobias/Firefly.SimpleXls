@@ -21,31 +21,19 @@ namespace Firefly.SimpleXls.Internal
         public static void WriteSheet<T>(ExcelPackage excel, IEnumerable<T> items, SheetExportSettings settings)
             where T : class, new()
         {
-            var name = settings.SheetName;
-            if (string.IsNullOrEmpty(name))
-            {
-                name = typeof(T).Name;
-            }
-            if (excel.Workbook.Worksheets.Any(s => s.Name == name))
-            {
-                throw new SimpleXlsException("A sheet named " + name + " already exists in this document.");
-            }
+            var descriptor = ModelDescriber.DescribeModel<T>();
 
-            var worksheet = excel.Workbook.Worksheets.Add(name);
-            worksheet.OutLineApplyStyle = true;
+            var worksheet = CreateSheet(excel, descriptor, settings);
+            CreateWorksheetHeader(worksheet, descriptor, settings);
 
-            var descriptors = ModelDescriptor.DescribeModel<T>();
-            CreateWorksheetHeader(worksheet, descriptors, settings);
-
-            var columnUsages = new int[descriptors.Count + 1];
+            var columnUsages = new int[descriptor.Columns.Count + 1];
             columnUsages.Initialize();
-
 
             var row = 2; // 1 = table header, 2 = first row. Excel ...
             foreach (var i in items)
             {
                 var col = 1;
-                foreach (var d in descriptors.Values)
+                foreach (var d in descriptor.Columns)
                 {
                     if (d.Attributes.Ignore)
                     {
@@ -83,10 +71,46 @@ namespace Firefly.SimpleXls.Internal
 
             if (settings.OmitEmptyColumns)
             {
-                OmitUnusedColumns(worksheet, descriptors.Count, columnUsages);
+                OmitUnusedColumns(worksheet, descriptor.Columns.Count, columnUsages);
             }
 
             excel.Save();
+        }
+
+        /// <summary>
+        /// Creates (and translates name of) a new sheet
+        /// </summary>
+        /// <param name="excel"></param>
+        /// <param name="descriptor"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        private static ExcelWorksheet CreateSheet(ExcelPackage excel, SheetDescriptor descriptor,
+            SheetExportSettings settings)
+        {
+            // name from settings has priority
+            var name = string.IsNullOrEmpty(settings.SheetName) ? descriptor.Name : settings.SheetName;
+
+            // if nothing set, model type name will be used
+            if (string.IsNullOrEmpty(name))
+            {
+                name = descriptor.ModelType.Name;
+            }
+
+            // name will be translated if localizer is present
+            if (settings.HasLocalizer && (settings.Translate))
+            {
+                name = settings.Localizer[descriptor.GetTranslationKeyForColumn(name)];
+            }
+
+            if (excel.Workbook.Worksheets.Any(s => s.Name == name))
+            {
+                name = string.Format("{0} {1}", name, excel.Workbook.Worksheets.Count);
+            }
+
+            var worksheet = excel.Workbook.Worksheets.Add(name);
+            worksheet.OutLineApplyStyle = true;
+
+            return worksheet;
         }
 
         /// <summary>
@@ -114,7 +138,7 @@ namespace Firefly.SimpleXls.Internal
                 return value;
             }
 
-            return settings.GetLocalizer()[str];
+            return settings.GetLocalizer()[descriptor.Attributes.DictionaryPrefix + str];
         }
 
         /// <summary>
@@ -138,22 +162,23 @@ namespace Firefly.SimpleXls.Internal
         /// Creates worksheet header
         /// </summary>
         /// <param name="worksheet"></param>
-        /// <param name="descriptors"></param>
+        /// <param name="descriptor"></param>
         /// <param name="settings"></param>
         private static void CreateWorksheetHeader(ExcelWorksheet worksheet,
-            Dictionary<string, ColumnDescriptor> descriptors, SheetExportSettings settings)
+            SheetDescriptor descriptor, SheetExportSettings settings)
         {
             var cntr = 1;
-            foreach (var d in descriptors.Values)
+            foreach (var d in descriptor.Columns)
             {
                 if (d.Attributes.Ignore)
                 {
                     continue;
                 }
+
                 var value = d.Attributes.Heading;
-                if (settings.TranslateColumnHeaders && settings.HasLocalizer)
+                if (settings.HasLocalizer && settings.Translate)
                 {
-                    value = settings.GetLocalizer()[d.Attributes.Heading];
+                    value = settings.GetLocalizer()[descriptor.GetTranslationKeyForColumn(d.Attributes.Heading)];
                 }
                 worksheet.Cells[1, cntr].Value = value;
                 cntr++;

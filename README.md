@@ -18,16 +18,39 @@ public void SaveXls(List<Orders> orders)
 ```
 ## Features
 
- * Simplified for ready-to-go data exporting
- * Comprehensive .NET API for exporting data model to XLS
+ * Comprehensive .NET API for simple XLS data exports
  * Allows multiple sheets in one document
  * Allows creating custom data converters
  * Output to file / stream
- * Value localization
- * Headers and values translation
+ * Localization & Translation
  * Cached type reflection
  * Experimental XLS import feature
- 
+
+
+## Table of contents
+<!-- TOC -->
+
+- [Firefly.SimpleXLS](#fireflysimplexls)
+    - [Features](#features)
+    - [Table of contents](#table-of-contents)
+    - [Installation](#installation)
+        - [Dependencies](#dependencies)
+    - [The export](#the-export)
+        - [Export settings](#export-settings)
+    - [The model](#the-model)
+        - [Basic model attributes](#basic-model-attributes)
+        - [Data types](#data-types)
+    - [Localization & Transalation](#localization--transalation)
+        - [Localization](#localization)
+            - [Note about data type Localization](#note-about-data-type-localization)
+        - [Translation](#translation)
+    - [Custom type mapping](#custom-type-mapping)
+            - [Let's have a custom model:](#lets-have-a-custom-model)
+            - [1: Create a converter:](#1-create-a-converter)
+            - [Register your converter once](#register-your-converter-once)
+    - [The import](#the-import)
+
+<!-- /TOC -->
 
 ## Installation
 
@@ -41,22 +64,19 @@ Windows
 PM> Install-Package Firefly.SimpleXLS
 ```
 
-#### Dependencies
+### Dependencies
 
  * Netstandard >= 1.6
  * EPPlus.Core >= 1.5.2
 
 
----
+## The export
 
-## Documentation
+ - To a file by string path
+ - To a file handle (`FileInfo`)
+ - To a `Stream`
 
-
-### The export
-
-There are 3 possible targets for exporting:
-
- ```cs
+```cs
 
 public void SaveXls(List<XlsOrderViewModel> orders)
 {
@@ -84,8 +104,7 @@ public void SaveXls(List<XlsOrderViewModel> orders)
 
 ```
 
-
-#### Export settings
+### Export settings
 
 Use a `SheetExportSettings` action for more detailed configuration.
 
@@ -98,9 +117,9 @@ public void SaveXls(List<XlsOrderViewModel> orders)
         settings => {
             settings.OmitEmptyColumns = true,                   // Default true; Colums with no values will be omitted
             settings.SheetName = "My customized sheet name",    // Default model name; Human-friendly name of the sheet
-            settings.UseCulture = new CultureInfo("hu-HU"),     // Default CurrentCulture; Spefific culture for converters and localization.
+            settings.UseCulture = new CultureInfo("cs-CZ"),     // Default CurrentCulture; Spefific culture for converters and localization.
             settings.Localizer = MyStringLocalizer,             // Default null; Provide an ILocalizer if you want to translate sheet data
-            settings.TranslateHeaders = true                    // Default true; Translates headers with Localizer, if present
+            settings.Translate = true                           // Default true; Translates headers with Localizer, if present
             }
         )
         .Export("eshop_orders.xlsx");
@@ -108,9 +127,9 @@ public void SaveXls(List<XlsOrderViewModel> orders)
 
 ```
 
-### The model
+## The model
 
-Create a model describing the data you want to export. Each property represents one column in the exported document.
+Create a view model describing the data you want to export. Each property represents one column in the exported document.
 
 ```cs
 
@@ -123,9 +142,31 @@ public class XlsOrderViewModel
 }
 
 ```
-> Hint: For quick mapping between your original entities and XLS view you can use ie. [the Automapper](https://github.com/AutoMapper/AutoMapper)
+> Hint: For quick mapping between your original entities and XLS view you can use ie. the [Automapper](https://github.com/AutoMapper/AutoMapper)
 
-#### Data types
+
+### Basic model attributes
+
+```cs
+
+[XlsSheet(Name = "My exported orders")]     // Custom sheet name
+public class XlsOrderViewModel
+{
+    [XlsHeader(Name = "Eshop order code")]  // Custom header name
+    public string Code { get; set; }
+
+    public string ArticleName { get; set; }
+    public decimal Price { get; set; }
+    public string CategoryName { get; set; }
+    public DateTime CreateAt { get; set; }
+
+    [XlsIgnore]                              // This column will not be exported 
+    public Guid SomeExternalId { get; set; }
+}
+
+```
+
+### Data types
 
 Supported primitive types:
  - string
@@ -144,43 +185,75 @@ Supported complex types:
  - Tuple of primitives
  - _Some other objects that can be natively represented by .ToString(), like Guid, Point, etc..._ 
 
+## Localization & Transalation
 
-#### Note about value Localization
+Sheet name, column headers and custom values can be localized and translated.
+
+### Localization
+
+ - `CultureInfo.CurrentCulture` is taken into account by default.
+ - For using custom culture, provide `settings.UseCulture` when initiating export.
+
+#### Note about data type Localization
 
 > Only `DateTime` and `TimeSpan` values are localized to the specified Culture. If you want to auto-localize other types, you may implement own `IValueConverter`.
-
 Localizing other types like _int : 1000.123 => 1,000.123_ is not recommended since Excel handles these datatypes by its own.
 
 
-#### Model attributes
+```cs
+public void CreateExport(List<Order> orders, IStringLocalizer<MyDictionary> myLocalizer)
+{
+    Exporter.CreateNew()
+        .AddSheet(orders, 
+        settings => {
+            settings.Localizer = myLocalizer,                  // Default null; Provide an ILocalizer if you want to translate sheet data
+            settings.UseCulture = new CultureInfo("cs-CZ")     // Default CurrentCulture; Spefific culture for converters and localization.
+            }
+        )
+        .Export("eshop_orders.xlsx");
+}
+```
+
+### Translation
+
+ - The sheet is not translated by default until you provide an `IStringLocalizer` when initiating import in `settings.Localizer`.
+ - If `settings.Localizer` is provided, all fields including the sheet name are translated by key which is equal as field name.
+ - Table cells are **not** translated even if Localizer is present. Use `XlsTranslate` attribute on the column instead.
+ - Automatic translation can be turned off setting `settings.Translate` to `FALSE`.
 
 ```cs
 
+[XlsSheet(Name = "OrderSheetName", DictionaryPrefix="my.dictionary.section.")]
 public class XlsOrderViewModel
 {
-    [XlsHeader(Name = "Eshop order code")]   // Will be dispayed as the header of this column 
     public string Code { get; set; }
 
     public string ArticleName { get; set; }
     public decimal Price { get; set; }
 
-    [XlsTranslate(DictPrefix = "eshop.categories.")]    // Will be translated by your localizer (if provided)
+    [XlsTranslate(DictPrefix = "eshop.categories.")]    // Custom value translation
     public string CategoryName { get; set; }
 
-    public DateTime CreateAt { get; set; }
+    [XlsHeader(Name = "AlternativeHeader")]             // Renaming the header key
+    public DateTime CreatedAt { get; set; }
 
-    [XlsIgnore]                              // This column will not be exported 
     public Guid SomeExternalId { get; set; }
 }
 
 ```
 
-### Custom type mapping
+> - If DictionaryPrefix is set, all fields (including sheet name) will be referenced as `my.dictionary.section.<colName>`, eg.:
+>   - `my.dictionary.section.Code`. 
+>   - `my.dictionary.section.OrderSheetName`.
+>   - `my.dictionary.section.AlternativeHeader`.
+> - DictionaryPrefix does not affect the `XlsTranslate` fields.
+
+
+## Custom type mapping
 
 You can add any custom or existing type converter with global scope.
 
-
- 1. Your custom object:
+#### Let's have a custom model:
 
 ```cs
 public class Driver 
@@ -191,7 +264,7 @@ public class Driver
 ```
 
 
- 2. Create a converter:
+#### 1: Create a converter:
 
 ```cs
 public class DriverValueConverter : IValueConverter
@@ -224,7 +297,7 @@ public class DriverValueConverter : IValueConverter
 }
 ```
 
-3. Register your converter
+#### Register your converter once
 
 
 ```cs
@@ -234,6 +307,7 @@ public void main()
 }
 
 ```
+
 
 ## The import
 
@@ -245,6 +319,24 @@ public void LoadXls()
 {
     var orders = Importer.Open("eshop_orders.xlsx")
         .ImportAs<XlsOrderViewModel>(
+            1,                                  // Index of the sheet based on 1. Optional.
+            settings => {
+                settings.BreakOnError = true    // Throws exception if some value fails to load,
+                settings.HasHeader = true       // If the table has a header to be taken in account
+            }
+        );
+}
+
+```
+
+> ... or you can import it as RawTable (basically a List of object[] for each row).
+
+```cs
+
+public void LoadXls()
+{
+    var orders = Importer.Open("eshop_orders.xlsx")
+        .ImportAsRaw(
             1,                                  // Index of the sheet based on 1. Optional.
             settings => {
                 settings.BreakOnError = true    // Throws exception if some value fails to load,

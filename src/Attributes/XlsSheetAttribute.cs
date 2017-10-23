@@ -6,5 +6,6 @@ namespace Firefly.SimpleXls.Attributes
     public class XlsSheetAttribute : Attribute
     {
         public string Name { get; set; }
+        public string DictionaryPrefix { get; set; } = "";
     }
 }

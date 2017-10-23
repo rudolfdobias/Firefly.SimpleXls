@@ -6,8 +6,19 @@ using OfficeOpenXml;
 
 namespace Firefly.SimpleXls.Internal
 {
+    /// <summary>
+    /// Imports excel sheets. (At least trying.)
+    /// </summary>
     internal static class XlsSheetReader
     {
+        /// <summary>
+        /// Raw import of excel sheet
+        /// </summary>
+        /// <param name="excel"></param>
+        /// <param name="idx"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        /// <exception cref="SimpleXlsValueReadException"></exception>
         public static RawTable ReadSheet(ExcelPackage excel, int idx,
             SheetImportSettings settings)
         {
@@ -74,9 +85,9 @@ namespace Firefly.SimpleXls.Internal
             }
 
             var startingRow = settings.HasHeader ? 2 : 1;
-            var descriptors = ModelDescriptor.DescribeModel<T>();
-            var maxCol = Math.Min(totalCols, descriptors.Count);
-            var descriptorValues = descriptors.Values.Where(d => d.Attributes.Ignore == false).ToArray();
+            var descriptor = ModelDescriber.DescribeModel<T>();
+            var maxCol = Math.Min(totalCols, descriptor.Columns.Count);
+            var descriptorValues = descriptor.Columns.Where(d => d.Attributes.Ignore == false).ToArray();
 
             for (var row = startingRow; row <= totalRows; row++)
             {

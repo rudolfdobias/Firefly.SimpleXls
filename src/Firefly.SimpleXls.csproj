@@ -7,9 +7,9 @@
     <DebugType>portable</DebugType>
     <AssemblyName>Firefly.SimpleXls</AssemblyName>
     <PackageId>Firefly.SimpleXls</PackageId>
-    <PackageTags>XLS Excel import export</PackageTags>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <PackageVersion>1.0.0-alpha2</PackageVersion>
+    <PackageTags>XLS Excel import export netcore</PackageTags>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/rudolfdobias/Firefly.SimpleXls/master/src/LICENSE.txt</PackageLicenseUrl>
+    <PackageVersion>1.0.0</PackageVersion>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">

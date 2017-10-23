@@ -11,20 +11,20 @@ namespace Firefly.SimpleXls.Internal
     /// <summary>
     /// Describes model members for conversion
     /// </summary>
-    internal static class ModelDescriptor
+    internal static class ModelDescriber
     {
         /// <summary>
         /// static reflection cache
         /// </summary>
-        private static Dictionary<string, Dictionary<string, ColumnDescriptor>> ReflectionCache { get; } =
-            new Dictionary<string, Dictionary<string, ColumnDescriptor>>();
+        private static Dictionary<string, SheetDescriptor> ReflectionCache { get; } =
+            new Dictionary<string, SheetDescriptor>();
 
         /// <summary>
         /// Describes model members for conversion
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static Dictionary<string, ColumnDescriptor> DescribeModel<T>()
+        public static SheetDescriptor DescribeModel<T>()
             => DescribeModel(typeof(T));
 
         /// <summary>
@@ -32,16 +32,17 @@ namespace Firefly.SimpleXls.Internal
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public static Dictionary<string, ColumnDescriptor> DescribeModel(Type model)
+        public static SheetDescriptor DescribeModel(Type model)
         {
             if (ReflectionCache.ContainsKey(model.AssemblyQualifiedName))
             {
                 return ReflectionCache[model.AssemblyQualifiedName];
             }
 
+            var sheet = CreateSheetDescriptor(model);
             var fields = model.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanRead).ToList();
-            var columns = new Dictionary<string, ColumnDescriptor>();
+
             foreach (var f in fields)
             {
                 var descriptor = new ColumnDescriptor
@@ -54,12 +55,31 @@ namespace Firefly.SimpleXls.Internal
                 {
                     descriptor.CustomValueConverter = XlsConverters.Converters[f.PropertyType];
                 }
-                columns.Add(f.Name, descriptor);
+                sheet.Columns.Add(descriptor);
             }
 
-            ReflectionCache[model.AssemblyQualifiedName] = columns;
+            ReflectionCache[model.AssemblyQualifiedName] = sheet;
 
-            return columns;
+            return sheet;
+        }
+
+        /// <summary>
+        /// Creates sheet descriptor based on supplied model and type attributes
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        private static SheetDescriptor CreateSheetDescriptor(Type model)
+        {
+            var attr = model.GetTypeInfo().GetCustomAttribute<XlsSheetAttribute>();
+
+            var sheet = new SheetDescriptor
+            {
+                ModelType = model,
+                DictionaryPrefix = attr?.DictionaryPrefix ?? "",
+                Name = attr?.Name ?? model.Name
+            };
+
+            return sheet;
         }
 
         /// <summary>
@@ -92,7 +112,7 @@ namespace Firefly.SimpleXls.Internal
                                                          " cannot be translated since it's not convertilbe to string.");
                         }
                         info.TranslateValue = true;
-                        info.DictionaryPrefix = (a as XlsTranslateAttribute)?.DictPrefix;
+                        info.DictionaryPrefix = (a as XlsTranslateAttribute)?.Prefix;
                         break;
                 }
             }

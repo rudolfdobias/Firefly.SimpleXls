@@ -9,7 +9,7 @@ namespace Firefly.SimpleXls
         public CultureInfo UseCulture { get; set; } = CultureInfo.CurrentCulture;
         public bool OmitEmptyColumns { get; set; }
         public IStringLocalizer Localizer { get; set; }
-        public bool TranslateColumnHeaders { get; set; } = true;
+        public bool Translate { get; set; } = true;
         internal bool HasLocalizer => Localizer != null;
 
         internal IStringLocalizer GetLocalizer()
